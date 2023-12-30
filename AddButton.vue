@@ -3,6 +3,9 @@
         type="button"
         :disabled="disabled"
         class="cryptonomicon__button"
+        :class="{
+            'cryptonomicon__button--disablet' : disabled
+        }"
     >
     <svg
         class="cryptonomicon__svg"
@@ -50,6 +53,9 @@ export default {
     color: black;
     background-color: transparent;
     transition: all 0.3s ease-in-out;
+}
+.cryptonomicon__button--disablet {
+    opacity: 0.3;
 }
 .cryptonomicon__button:hover {
     color: blue;
