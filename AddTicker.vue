@@ -13,13 +13,13 @@
                     v-model="ticker"
                     @keydown.enter="add"
                     @focus="$emit('focus')"
-                    @input="searchAndMatch"
+                    
                     class="cryptonomicon__input"
                     placeholder="Например BTC"
                 />
             </div>
-            <ul v-if="ticker.trim() !== ''">
-                <li v-for="symbol in matchedSymbols" :key="symbol" @click="addCoin(symbol)">{{ symbol }}</li>
+            <ul v-if="matched.length > 0" class="cryptonomicon__matched">
+                <li v-for="symbol in matched" :key="symbol" @click="addCoin(symbol)">{{ symbol.Symbol }}</li>
             </ul>
         </div>
 
@@ -67,11 +67,34 @@ export default {
 
         // Массив для хранения найденных символов
         matchedSymbols: [],
-
-        // Идентификатор таймера для задержки запросов
-        searchTimeout: null,
+        
+        // массив тикеров из сетевого запроса
+        allTickers: [],
     };
   },
+
+
+    // сетевой запрос тикеров
+    async mounted() {
+        const response = await fetch('https://min-api.cryptocompare.com/data/all/coinlist?summary=true');
+        const result = await response.json();
+        this.allTickers = Object.values(result.Data);
+    },
+
+    computed: {
+        matched() {
+            if (!this.ticker.trim()) {
+                return [];
+            }
+
+            return this.allTickers.filter(coin => {
+                return coin.Symbol.toLowerCase().startsWith(this.ticker.toLowerCase().trim()) || 
+                coin.FullName.toLowerCase().startsWith(this.ticker.toLowerCase().trim());
+            })
+            
+           .slice(0, 5);
+        },
+    },
 
   methods: {
     add() {
@@ -82,50 +105,12 @@ export default {
       this.ticker = "";
     },
 
-    searchAndMatch() {
-        // Очищаем предыдущий тайм-аут (если есть)
-        clearTimeout(this.searchTimeout);
-
-        // Устанавливаем тайм-аут для задержки запроса
-        this.searchTimeout = setTimeout(() => {
-
-          // Выполняем сетевой запрос
-          fetch('https://min-api.cryptocompare.com/data/all/coinlist?summary=true')
-            .then(response => response.json())
-            .then(data => {
-
-              // Получаем объект ответа
-              const coins = data.Data;
-
-              // Хранение найденных символов
-              const matchedSymbols = [];
-
-              // Ищем совпадение с введенным текстом в инпуте
-              for (const coinKey in coins) {
-                if (coinKey.toUpperCase().includes(this.ticker.toUpperCase())) {
-                    // console.log(coinKey.toUpperCase().includes(this.ticker.toUpperCase()));
-
-                    // Добавляем символ монеты в массив
-                  matchedSymbols.push(coins[coinKey].Symbol);
-                  // console.log(coins[coinKey].Symbol)
-
-                  // Если найдено 4 совпадения, завершаем поиск
-                  if (matchedSymbols.length === 4) {
-                    break;
-                  }
-                }
-              }
-
-              // Обновляем массив совпадений в данных
-              this.matchedSymbols = matchedSymbols;
-            })
-        }, 300); // Задержка в 300 миллисекунд (можно настроить под себя)
-      }
+    addCoin(symbol) {
+        this.ticker = symbol.Symbol;
+        this.add();
+    }
   },
-  addCoin(coinSymbol) {
-    this.tickers.push(coinSymbol);
-    console.log(this.tickers);
-  },
+
 };
 </script>
 
@@ -155,4 +140,10 @@ export default {
     font-size: 20px;
     color: black;
 }
+.cryptonomicon__matched {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+ul { list-style: none; }
 </style>
