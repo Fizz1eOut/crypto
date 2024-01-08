@@ -539,4 +539,9 @@ export default {
 .cryptonomicon__border {
     border: 1px solid rgb(188 187 187);
 }
+@media (max-width: 480px) {
+    .cryptonomicon__items {
+        justify-content: center;
+    }
+  }
 </style>
